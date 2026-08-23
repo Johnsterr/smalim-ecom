@@ -54,9 +54,21 @@ async def update_category(category_id: int):
     return {"message": f"Категория с ID {category_id} обновлена (заглушка)"}
 
 
-@router.delete("/{category_id}")
-async def delete_category(category_id: int):
+@router.delete("/{category_id}", status_code=status.HTTP_200_OK)
+async def delete_category(category_id: int, db: Session = Depends(get_db)):
     """
-    Удаляет категорию по её ID.
+    Логически удаляет категорию по её ID, устанавливая is_active=False.
     """
-    return {"message": f"Категория с ID {category_id} удалена (заглушка)"}
+    # Проверка существования активной категории
+    stmt = select(CategoryModel).where(CategoryModel.id ==
+                                       category_id, CategoryModel.is_active == True)
+    category = db.scalars(stmt).first()
+    if category is None:
+        raise HTTPException(status_code=404, detail="Category not found")
+
+    # Логическое удаление категории (установка is_active=False)
+    db.execute(update(CategoryModel).where(
+        CategoryModel.id == category_id).values(is_active=False))
+    db.commit()
+
+    return {"status": "success", "message": "Category marked as inactive"}
