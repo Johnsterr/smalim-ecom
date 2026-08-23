@@ -219,3 +219,6 @@ __marimo__/
 
 # OS files
 .DS_Store
+
+# Database files
+ecommerce.db
