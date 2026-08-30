@@ -36,7 +36,7 @@ async def create_category(category: CategoryCreate, db: Session = Depends(get_db
         parent = db.scalars(stmt).first()
         if parent is None:
             raise HTTPException(
-                status_code=400, detail="Parent category not found")
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Parent category not found")
 
     # Создание новой категории
     db_category = CategoryModel(**category.model_dump())
@@ -56,7 +56,8 @@ async def update_category(category_id: int, category: CategoryCreate, db: Sessio
                                        CategoryModel.is_active == True)
     db_category = db.scalars(stmt).first()
     if db_category is None:
-        raise HTTPException(status_code=404, detail="Category not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Category not found")
 
     # Проверка существования parent_id, если указан
     if category.parent_id is not None:
@@ -65,7 +66,7 @@ async def update_category(category_id: int, category: CategoryCreate, db: Sessio
         parent = db.scalars(parent_stmt).first()
         if parent is None:
             raise HTTPException(
-                status_code=400, detail="Parent category not found")
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Parent category not found")
 
     # Обновление категории
     db.execute(
@@ -88,7 +89,8 @@ async def delete_category(category_id: int, db: Session = Depends(get_db)):
                                        category_id, CategoryModel.is_active == True)
     category = db.scalars(stmt).first()
     if category is None:
-        raise HTTPException(status_code=404, detail="Category not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Category not found")
 
     # Логическое удаление категории (установка is_active=False)
     db.execute(update(CategoryModel).where(
