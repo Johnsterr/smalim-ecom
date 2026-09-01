@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from app.models.products import Product as ProductModel
@@ -46,33 +46,99 @@ async def create_product(product: ProductCreate, db: Session = Depends(get_db)):
     return db_product
 
 
-@router.get("/category/{category_id}")
-async def get_products_by_category(category_id: int):
+@router.get("/category/{category_id}", response_model=list[ProductSchema])
+async def get_products_by_category(category_id: int, db: Session = Depends(get_db)):
     """
     Возвращает список товаров в указанной категории по её ID.
     """
-    return {"message": f"Товары в категории {category_id} (заглушка)"}
+    # Проверяем, существует ли активная категория
+    stmt = select(CategoryModel).where(CategoryModel.id == category_id,
+                                       CategoryModel.is_active == True)
+    category = db.scalars(stmt).first()
+    if not category:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Category not found or inactive")
+
+    # Получаем активные товары в категории
+    stmt = select(ProductModel).where(ProductModel.category_id == category.id,
+                                      ProductModel.is_active == True)
+    products = db.scalars(stmt).all()
+    return products
 
 
 @router.get("/{product_id}")
-async def get_product(product_id: int):
+async def get_product(product_id: int, db: Session = Depends(get_db)):
     """
     Возвращает детальную информацию о товаре по его ID.
     """
-    return {"message": f"Детали товара {product_id} (заглушка)"}
+    # Проверяем, существует ли активный товар
+    stmt = select(ProductModel).where(
+        ProductModel.id == product_id, ProductModel.is_active == True)
+    product = db.scalars(stmt).first()
+    if not product:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Product not found or inactive")
+
+    # Проверяем, существует ли активная категория
+    stmt = select(CategoryModel).where(CategoryModel.id == product.category_id,
+                                       CategoryModel.is_active == True)
+    category = db.scalars(stmt).first()
+    if not category:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Category not found or inactive")
+
+    return product
 
 
-@router.put("/{product_id}")
-async def update_product(product_id: int):
+@router.put("/{product_id}", response_model=ProductSchema)
+async def update_product(product_id: int, product: ProductCreate, db: Session = Depends(get_db)):
     """
     Обновляет товар по его ID.
     """
-    return {"message": f"Товар {product_id} обновлён (заглушка)"}
+    # Проверяем, существует ли товар
+    stmt = select(ProductModel).where(ProductModel.id == product_id,
+                                      ProductModel.is_active == True)
+    db_product = db.scalars(stmt).first()
+    if not db_product:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Product not found or inactive")
+
+    # Проверяем, существует ли активная категория
+    stmtCategory = select(CategoryModel).where(CategoryModel.id == product.category_id,
+                                               CategoryModel.is_active == True)
+    category = db.scalars(stmtCategory).first()
+    if not category:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Category not found or inactive")
+
+    # Обновляем товар
+    db.execute(
+        update(ProductModel)
+        .where(ProductModel.id == product_id)
+        .values(**product.model_dump())
+    )
+    db.commit()
+    db.refresh(db_product)
+    return db_product
 
 
-@router.delete("/{product_id}")
-async def delete_product(product_id: int):
+@router.delete("/{product_id}", status_code=status.HTTP_200_OK)
+async def delete_product(product_id: int, db: Session = Depends(get_db)):
     """
     Удаляет товар по его ID.
     """
-    return {"message": f"Товар {product_id} удалён (заглушка)"}
+    # Проверяем, существует ли активный товар
+    stmt = select(ProductModel).where(
+        ProductModel.id == product_id, ProductModel.is_active == True)
+    product = db.scalars(stmt).first()
+    if not product:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Product not found or inactive")
+
+    # Изменяем объект установив is_active=False и сохраняем
+    # db.execute(update(ProductModel).where(
+    #     ProductModel.id == product_id).values(is_active=False))
+    product.is_active = False
+    db.commit()
+
+    return {"status": "success", "message": "Product marked as inactive"}
