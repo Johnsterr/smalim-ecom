@@ -16,12 +16,13 @@ router = APIRouter(
 
 
 @router.get("/", response_model=list[CategorySchema])
-async def get_all_categories(db: Session = Depends(get_db)):
+async def get_all_categories(db: AsyncSession = Depends(get_async_db)):
     """
     Возвращает список всех активных категорий.
     """
     stmt = select(CategoryModel).where(CategoryModel.is_active == True)
-    categories = db.scalars(stmt).all()
+    result = await db.scalars(stmt)
+    categories = result.all()
     return categories
 
 
