@@ -9,6 +9,9 @@ uvicorn = "*"
 pydantic = "*"
 sqlalchemy = "*"
 alembic = "*"
+asyncpg = "*"
+greenlet = "*"
+pydantic-settings = "*"
 
 [dev-packages]
 
