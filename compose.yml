@@ -1,0 +1,37 @@
+name: smalim-ecom
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: smalim_db
+    user: "postgres"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    shm_size: 128mb
+    restart: on-failure:5
+    ports:
+      - "5454:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql
+    networks:
+      - app
+
+  adminer:
+    image: adminer
+    container_name: smalim_adminer
+    restart: unless-stopped
+    ports:
+      - 8080:8080
+    depends_on:
+      - postgres
+    networks:
+      - app
+
+volumes:
+  pg_data:
+    driver: local
+
+networks:
+  app:
