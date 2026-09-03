@@ -222,3 +222,4 @@ __marimo__/
 
 # Database files
 ecommerce.db
+/pg_data

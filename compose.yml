@@ -2,7 +2,7 @@ name: smalim-ecom
 
 services:
   postgres:
-    image: postgres:18-alpine
+    image: postgres:18
     container_name: smalim_db
     user: "postgres"
     environment:
@@ -14,7 +14,7 @@ services:
     ports:
       - "5454:5432"
     volumes:
-      - pg_data:/var/lib/postgresql
+      - ./pg_data:/var/lib/postgresql
     networks:
       - app
 
