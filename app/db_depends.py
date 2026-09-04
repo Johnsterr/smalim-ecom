@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import SessionLocal, async_session_maker
 
 
+# TODO deprecated
 def get_db() -> Generator[Session, None, None]:
     """
     Зависимость для получения сессии базы данных.

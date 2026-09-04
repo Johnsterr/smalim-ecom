@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select, update
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.products import Product as ProductModel
 from app.models.categories import Category as CategoryModel
 from app.schemas import Product as ProductSchema, ProductCreate
-from app.db_depends import get_db
+from app.db_depends import get_async_db
 
 
 # Создаём маршрутизатор для товаров
@@ -16,24 +16,26 @@ router = APIRouter(
 
 
 @router.get("/", response_model=list[ProductSchema])
-async def get_all_products(db: Session = Depends(get_db)):
+async def get_all_products(db: AsyncSession = Depends(get_async_db)):
     """
-    Возвращает список всех товаров.
+    Возвращает список всех активных товаров.
     """
     stmt = select(ProductModel).where(ProductModel.is_active == True)
-    products = db.scalars(stmt).all()
+    result = await db.scalars(stmt)
+    products = result.all()
     return products
 
 
 @router.post("/", response_model=ProductSchema, status_code=status.HTTP_201_CREATED)
-async def create_product(product: ProductCreate, db: Session = Depends(get_db)):
+async def create_product(product: ProductCreate, db: AsyncSession = Depends(get_async_db)):
     """
     Создаёт новый товар.
     """
     # Проверяем, существует ли активная категория
     stmt = select(CategoryModel).where(CategoryModel.id == product.category_id,
                                        CategoryModel.is_active == True)
-    category = db.scalars(stmt).first()
+    category_result = await db.scalars(stmt)
+    category = category_result.first()
     if not category:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Category not found or inactive")
@@ -41,20 +43,21 @@ async def create_product(product: ProductCreate, db: Session = Depends(get_db)):
     # Создание товара
     db_product = ProductModel(**product.model_dump())
     db.add(db_product)
-    db.commit()
-    db.refresh(db_product)
+    await db.commit()
+    await db.refresh(db_product)
     return db_product
 
 
 @router.get("/category/{category_id}", response_model=list[ProductSchema])
-async def get_products_by_category(category_id: int, db: Session = Depends(get_db)):
+async def get_products_by_category(category_id: int, db: AsyncSession = Depends(get_async_db)):
     """
     Возвращает список товаров в указанной категории по её ID.
     """
     # Проверяем, существует ли активная категория
     stmt = select(CategoryModel).where(CategoryModel.id == category_id,
                                        CategoryModel.is_active == True)
-    category = db.scalars(stmt).first()
+    category_result = await db.scalars(stmt)
+    category = category_result.first()
     if not category:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Category not found or inactive")
@@ -62,19 +65,21 @@ async def get_products_by_category(category_id: int, db: Session = Depends(get_d
     # Получаем активные товары в категории
     stmt = select(ProductModel).where(ProductModel.category_id == category.id,
                                       ProductModel.is_active == True)
-    products = db.scalars(stmt).all()
+    products_result = await db.scalars(stmt)
+    products = products_result.all()
     return products
 
 
 @router.get("/{product_id}")
-async def get_product(product_id: int, db: Session = Depends(get_db)):
+async def get_product(product_id: int, db: AsyncSession = Depends(get_async_db)):
     """
     Возвращает детальную информацию о товаре по его ID.
     """
     # Проверяем, существует ли активный товар
     stmt = select(ProductModel).where(
         ProductModel.id == product_id, ProductModel.is_active == True)
-    product = db.scalars(stmt).first()
+    product_result = await db.scalars(stmt)
+    product = product_result.first()
     if not product:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Product not found or inactive")
@@ -82,7 +87,8 @@ async def get_product(product_id: int, db: Session = Depends(get_db)):
     # Проверяем, существует ли активная категория
     stmt = select(CategoryModel).where(CategoryModel.id == product.category_id,
                                        CategoryModel.is_active == True)
-    category = db.scalars(stmt).first()
+    category_result = await db.scalars(stmt)
+    category = category_result.first()
     if not category:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Category not found or inactive")
@@ -91,14 +97,15 @@ async def get_product(product_id: int, db: Session = Depends(get_db)):
 
 
 @router.put("/{product_id}", response_model=ProductSchema)
-async def update_product(product_id: int, product: ProductCreate, db: Session = Depends(get_db)):
+async def update_product(product_id: int, product: ProductCreate, db: AsyncSession = Depends(get_async_db)):
     """
     Обновляет товар по его ID.
     """
     # Проверяем, существует ли товар
     stmt = select(ProductModel).where(ProductModel.id == product_id,
                                       ProductModel.is_active == True)
-    db_product = db.scalars(stmt).first()
+    db_product_result = await db.scalars(stmt)
+    db_product = db_product_result.first()
     if not db_product:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Product not found or inactive")
@@ -106,31 +113,33 @@ async def update_product(product_id: int, product: ProductCreate, db: Session = 
     # Проверяем, существует ли активная категория
     stmtCategory = select(CategoryModel).where(CategoryModel.id == product.category_id,
                                                CategoryModel.is_active == True)
-    category = db.scalars(stmtCategory).first()
+    category_result = await db.scalars(stmtCategory)
+    category = category_result.first()
     if not category:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                             detail="Category not found or inactive")
 
     # Обновляем товар
-    db.execute(
+    await db.execute(
         update(ProductModel)
         .where(ProductModel.id == product_id)
         .values(**product.model_dump())
     )
-    db.commit()
-    db.refresh(db_product)
+    await db.commit()
+    await db.refresh(db_product)
     return db_product
 
 
 @router.delete("/{product_id}", status_code=status.HTTP_200_OK)
-async def delete_product(product_id: int, db: Session = Depends(get_db)):
+async def delete_product(product_id: int, db: AsyncSession = Depends(get_async_db)):
     """
     Удаляет товар по его ID.
     """
     # Проверяем, существует ли активный товар
     stmt = select(ProductModel).where(
         ProductModel.id == product_id, ProductModel.is_active == True)
-    product = db.scalars(stmt).first()
+    product_result = await db.scalars(stmt)
+    product = product_result.first()
     if not product:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Product not found or inactive")
@@ -139,6 +148,6 @@ async def delete_product(product_id: int, db: Session = Depends(get_db)):
     # db.execute(update(ProductModel).where(
     #     ProductModel.id == product_id).values(is_active=False))
     product.is_active = False
-    db.commit()
-
-    return {"status": "success", "message": "Product marked as inactive"}
+    await db.commit()
+    await db.refresh(product)
+    return product
