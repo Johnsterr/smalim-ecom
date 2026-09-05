@@ -10,9 +10,9 @@ class Settings(BaseSettings):
     """
 
     # Application settings
-    APP_NAME: str = "Smalim Ecom"
-    DEBUG: bool = False
-    SECRET_KEY: Optional[str] = None
+    APP_NAME: str = Field(env='APP_NAME', default='Smalim Ecom')
+    DEBUG: bool = Field(env='DEBUG', default=False)
+    SECRET_KEY: str = Field(env='SECRET_KEY', default='')
 
     LOG_LEVEL: str = Field(env='LOG_LEVEL', default='INFO')
 
@@ -25,10 +25,10 @@ class Settings(BaseSettings):
         env='POSTGRES_PASSWORD', default='app_password')
 
     # Database pool settings
-    DB_POOL_SIZE: int = 10
-    DB_MAX_OVERFLOW: int = 20
-    DB_POOL_TIMEOUT: int = 30
-    DB_ECHO: bool = False
+    DB_POOL_SIZE: int = Field(env='DB_POOL_SIZE', default=10)
+    DB_MAX_OVERFLOW: int = Field(env='DB_MAX_OVERFLOW', default=20)
+    DB_POOL_TIMEOUT: int = Field(env='DB_POOL_TIMEOUT', default=30)
+    DB_ECHO: bool = Field(env='DB_ECHO', default=False)
 
     model_config = SettingsConfigDict(
         env_file=".env",
