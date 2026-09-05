@@ -1,6 +1,6 @@
 from fastapi import Depends, FastAPI
 
-from app.routers import categories, products
+from app.routers import categories, products, users
 from app.config import Settings, get_settings
 
 # Создаём приложение FastAPI
@@ -12,6 +12,7 @@ app = FastAPI(
 # Подключаем маршруты категорий и товаров
 app.include_router(categories.router)
 app.include_router(products.router)
+app.include_router(users.router)
 
 
 # Корневой эндпоинт для проверки
