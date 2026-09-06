@@ -16,6 +16,7 @@ password_hash = PasswordHash.recommended()
 
 JWT_HASH_ALGORITHM: str = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
+REFRESH_TOKEN_EXPIRE_DAYS = 7
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="users/token")
 
@@ -43,21 +44,24 @@ def get_secret_key() -> str:
 
 def create_access_token(data: dict) -> str:
     """
-    Создаёт JWT-токен.
+    Создаёт access-токен.
     """
     to_encode = data.copy()
+    expire = datetime.now(timezone.utc) + \
+        timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire, "token_type": "access"})
+    return jwt.encode(to_encode, get_secret_key(), algorithm=JWT_HASH_ALGORITHM)
 
-    expire = datetime.now(timezone.utc) + timedelta(
-        minutes=ACCESS_TOKEN_EXPIRE_MINUTES
-    )
 
-    to_encode.update({"exp": expire})
-
-    return jwt.encode(
-        to_encode,
-        get_secret_key(),
-        algorithm=JWT_HASH_ALGORITHM,
-    )
+def create_refresh_token(data: dict) -> str:
+    """
+    Создаёт refresh-токен с длительным сроком действия и token_type="refresh".
+    """
+    to_encode = data.copy()
+    expire = datetime.now(timezone.utc) + \
+        timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+    to_encode.update({"exp": expire, "token_type": "refresh"})
+    return jwt.encode(to_encode, get_secret_key(), algorithm=JWT_HASH_ALGORITHM)
 
 
 async def get_current_user(
