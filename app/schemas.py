@@ -1,4 +1,6 @@
-from pydantic import BaseModel, EmailStr, Field, ConfigDict
+from pydantic import BaseModel, EmailStr, Field, ConfigDict, field_validator
+from datetime import datetime
+from typing import Optional
 from decimal import Decimal
 
 
@@ -98,3 +100,33 @@ class AccessTokenResponse(BaseModel):
 class RefreshTokenResponse(BaseModel):
     refresh_token: str
     token_type: str = "bearer"
+
+
+class Review(BaseModel):
+    """
+    Модель для ответа с данными отзыва о товаре.
+    Используется в GET-запросах.
+    """
+    id: int = Field(..., description="Уникальный идентификатор отзыва")
+    user_id: int = Field(..., description="ID пользователя, оставившего отзыв")
+    product_id: int = Field(..., description="ID товара")
+    comment: str | None = Field(None, description="Комментарий к отзыву")
+    comment_date: datetime = Field(..., description="Дата и время комментария")
+    grade: int = Field(..., description="Оценка товара", ge=1, le=5)
+    is_active: bool = Field(..., description="Активность отзыва")
+
+    model_config = ConfigDict(from_attributes=True)
+
+    @field_validator('grade')
+    @classmethod
+    def validate_grade(cls, v: int) -> int:
+        if not 1 <= v <= 5:
+            raise ValueError('Grade must be between 1 and 5')
+        return v
+
+
+class ReviewCreate(BaseModel):
+    product_id: int = Field(..., description="ID товара")
+    comment: Optional[str] = Field(
+        None, max_length=500, description="Комментарий к отзыву (необязательно)")
+    grade: int = Field(..., description="Оценка товара", ge=1, le=5)
