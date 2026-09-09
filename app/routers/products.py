@@ -18,6 +18,14 @@ router = APIRouter(
 )
 
 
+# Маппинг полей для сортировки
+SORT_FIELD_MAP = {
+    "id": ProductModel.id,
+    "created_at": ProductModel.created_at,
+    "updated_at": ProductModel.updated_at
+}
+
+
 @router.get("/", response_model=ProductList)
 async def get_all_products(
     page: int = Query(1, ge=1),
@@ -32,6 +40,10 @@ async def get_all_products(
         None, description="true — только товары в наличии, false — только без остатка"),
     seller_id: int | None = Query(
         None, description="ID продавца для фильтрации"),
+    sort_by: str = Query(
+        "id", pattern="^(id|created_at|updated_at)$", description="Поле для сортировки (id, created_at, updated_at)"),
+    sort_order: str = Query(
+        "asc", pattern="^(asc|desc)$", description="Направление сортировки (asc - по возрастанию, desc - по убыванию)"),
     db: AsyncSession = Depends(get_async_db)
 ):
     """
@@ -62,10 +74,19 @@ async def get_all_products(
     total_stmt = select(func.count()).select_from(ProductModel).where(*filters)
     total = await db.scalar(total_stmt) or 0
 
+    # Получаем поле для сортировки из маппинга
+    sort_field = SORT_FIELD_MAP[sort_by]
+
+    # Применяем направление сортировки
+    if sort_order == "desc":
+        sort_field = sort_field.desc()
+    else:
+        sort_field = sort_field.asc()
+
     products_stmt = (
         select(ProductModel)
         .where(*filters)
-        .order_by(ProductModel.id)
+        .order_by(sort_field)
         .offset((page - 1) * page_size)
         .limit(page_size)
     )
