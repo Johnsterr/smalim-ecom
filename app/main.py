@@ -1,4 +1,5 @@
 from fastapi import Depends, FastAPI
+from fastapi.staticfiles import StaticFiles
 
 from app.routers import categories, products, users, reviews, cart, orders
 from app.config import Settings, get_settings
@@ -8,6 +9,8 @@ app = FastAPI(
     title="E-commerce API",
     version="0.0.1",
 )
+
+app.mount("/media", StaticFiles(directory="media"), name="media")
 
 # Подключаем маршруты категорий и товаров
 app.include_router(categories.router)
