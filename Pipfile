@@ -15,6 +15,7 @@ pyjwt = "*"
 python-multipart = "*"
 pydantic = {extras = ["email"], version = "*"}
 pwdlib = {extras = ["argon2"], version = "*"}
+yookassa = "*"
 
 [dev-packages]
 
