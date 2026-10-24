@@ -170,3 +170,25 @@ async def get_order(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
     return order
+
+# TODO
+# /orders/{order_id}/status
+# @router.get("/{order_id}/status")
+# async def get_order_status(
+#     order_id: int,
+#     db: AsyncSession = Depends(get_async_db),
+#     current_user: UserModel = Depends(get_current_user),
+# ):
+#     """
+#     Возвращает статус заказа, если он принадлежит пользователю.
+#     """
+#     order = await _load_order_with_items(db, order_id)
+#     if not order or order.user_id != current_user.id:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
+#     return {
+#         "order_id": order.id,
+#         "status": order.status,  # или "pending", "canceled", "failed"
+#         "paid_at": order.paid_at.isoformat() if order.paid_at else None,  # null, если не оплачен
+#         "message": f"Спасибо! Заказ #{order.id} оплачен. Ожидайте доставку."
+#     }
