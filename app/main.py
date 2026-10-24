@@ -31,16 +31,16 @@ async def root():
     return {"message": "Welcome to the E-commerce API!"}
 
 
-@app.get("/settings")
-async def get_app_settings(settings: Settings = Depends(get_settings)):
-    """
-    Возвращает текущие настройки приложения.
-    """
-    return {
-        "app_name": settings.APP_NAME,
-        "postgres_host": settings.POSTGRES_HOST,
-        "postgres_port": settings.POSTGRES_PORT,
-        "postgres_db": settings.POSTGRES_DB,
-        "postgres_user": settings.POSTGRES_USER,
-        "database_url": settings.database_url,
-    }
+# @app.get("/settings")
+# async def get_app_settings(settings: Settings = Depends(get_settings)):
+#     """
+#     Возвращает текущие настройки приложения.
+#     """
+#     return {
+#         "app_name": settings.APP_NAME,
+#         "postgres_host": settings.POSTGRES_HOST,
+#         "postgres_port": settings.POSTGRES_PORT,
+#         "postgres_db": settings.POSTGRES_DB,
+#         "postgres_user": settings.POSTGRES_USER,
+#         "database_url": settings.database_url,
+#     }
