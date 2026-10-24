@@ -7,11 +7,7 @@ from anyio import to_thread  # Для запуска синхронного ко
 from yookassa import Configuration, Payment  # библиотека YooKassa
 from yookassa.domain.response import PaymentResponse
 
-from app.config import (  # Импорт настроек
-    YOOKASSA_RETURN_URL,
-    YOOKASSA_SECRET_KEY,
-    YOOKASSA_SHOP_ID,
-)
+from app.config import get_settings
 
 
 async def create_yookassa_payment(  # Асинхронная функция (для FastAPI)
@@ -22,6 +18,9 @@ async def create_yookassa_payment(  # Асинхронная функция (д�
     description: str,  # Описание (напр. "Оплата заказа №123")
     # Возврат: {'id': '...', 'status': '...', 'confirmation_url': '...'}
 ) -> dict[str, Any]:
+    YOOKASSA_SHOP_ID = get_settings().YOOKASSA_SHOP_ID
+    YOOKASSA_SECRET_KEY = get_settings().YOOKASSA_SECRET_KEY
+    YOOKASSA_RETURN_URL = get_settings().YOOKASSA_RETURN_URL
 
     # 1. Проверка настроек (fallback на ошибку)
     if not YOOKASSA_SHOP_ID or not YOOKASSA_SECRET_KEY:
