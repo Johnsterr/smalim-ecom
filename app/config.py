@@ -30,6 +30,11 @@ class Settings(BaseSettings):
     DB_POOL_TIMEOUT: int = Field(env='DB_POOL_TIMEOUT', default=30)
     DB_ECHO: bool = Field(env='DB_ECHO', default=False)
 
+    # Yookassa settings
+    YOOKASSA_SHOP_ID: str = Field(env='YOOKASSA_SHOP_ID', default='')
+    YOOKASSA_SECRET_KEY: str = Field(env='YOOKASSA_SECRET_KEY', default='')
+    YOOKASSA_RETURN_URL: str = Field(env='YOOKASSA_RETURN_URL', default='')
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
